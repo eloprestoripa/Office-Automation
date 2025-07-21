@@ -16,7 +16,7 @@ def procesar_csv(ruta_csv):
 
     # Formatos
     header_fill = PatternFill("solid", fgColor="969696")  # Gris encabezado
-    header_font = Font(bold=True, color="000000")
+    header_font = Font(bold=True, color="000000", size = 12)
     center_alignment = Alignment(horizontal='center', vertical='center')
 
     thin_border = Border(
@@ -70,19 +70,22 @@ def procesar_csv(ruta_csv):
         hoja_detalle = wb.create_sheet(title=f"Detalle_Shelf_{shelf_num}")
 
         # Celda combinada para el título
-        hoja_detalle.merge_cells("B1:J1")
-        titulo = hoja_detalle["B1"]
+        hoja_detalle.merge_cells("C1:K1")
+        titulo = hoja_detalle["C1"]
         titulo.value = "Detalle de módulos insertables"
         titulo.alignment = center_alignment
-        titulo.font = Font(bold=True)
+        titulo.font = Font(bold=True, size=14)
         titulo.border = thin_border
 
-        # Números de puertos en fila 2 (B2 → J2)
-        for col_idx in range(2, 11):  # B(2) a J(10)
+        hoja_detalle.merge_cells("A1:B2")
+
+        # Números de puertos en fila 2 (C2 → K2)
+        for col_idx in range(3, 12):  # C(2) a K(10)
             cell = hoja_detalle.cell(row=2, column=col_idx)
             cell.value = f"{col_idx-1:02d}"  # 01, 02, ..., 09
             cell.alignment = center_alignment
             cell.border = thin_border
+            cell.font = Font(size=14)
 
         # Determinar cantidad de slots a partir del tipo de chasis del grupo actual
         primer_tipo_chasis = str(group_df.iloc[0, 3])  # Columna 4 → índice 3
@@ -97,17 +100,26 @@ def procesar_csv(ruta_csv):
         else:
             cantidad_slots = 1  # Valor por defecto si no coincide
 
+        hoja_detalle.merge_cells("A3:A" + str(cantidad_slots+2))
+        slots_cell = hoja_detalle["A3"]
+        slots_cell.value = "Slots"
+        slots_cell.alignment = Alignment(horizontal='center', vertical='center', textRotation=90)
+        slots_cell.border = thin_border
+        slots_cell.font = Font(size=14)
+
         # Completar slots en columna A (fila 3 en adelante)
         for fila_idx in range(3, 3 + cantidad_slots):
-            celda_slot = hoja_detalle.cell(row=fila_idx, column=1, value=fila_idx - 2)  # columna A
+            celda_slot = hoja_detalle.cell(row=fila_idx, column=2, value=fila_idx - 2)  # columna A
             celda_slot.alignment = center_alignment
             celda_slot.border = thin_border
+            celda_slot.font = Font(size=14)
 
-            for col_idx in range(2, 11):
+            for col_idx in range(3, 12):
                 cell = hoja_detalle.cell(row=fila_idx, column=col_idx)
                 cell.value = "N/A"
                 cell.alignment = center_alignment
                 cell.border = thin_border
+                cell.font = Font(size=14)
 
         # ---------------------------
         # Procesar slots tipo s-p → colocar Physical PEC en tabla
@@ -127,18 +139,19 @@ def procesar_csv(ruta_csv):
 
                 if 1 <= s <= cantidad_slots and 1 <= p <= 9:
                     fila_excel = 2 + s
-                    columna_excel = 1 + p
+                    columna_excel = 2 + p
 
                     physical_pec = fila['Physical PEC']
                     celda = hoja_detalle.cell(row=fila_excel, column=columna_excel, value=physical_pec)
                     celda.alignment = center_alignment
                     celda.border = thin_border
+                    celda.font = Font(size=14)
 
                     if physical_pec not in vistos:
                         vistos.add(physical_pec)
                         cards_por_shelf[shelf_num].append((physical_pec, fila['Card Type']))
 
-        for col_idx in range(1, 11):  # A → J
+        for col_idx in range(3, 12):  # A → J
             max_length = 0
             for row_idx in range(2, 3 + cantidad_slots): 
                 valor = hoja_detalle.cell(row=row_idx, column=col_idx).value
@@ -147,15 +160,20 @@ def procesar_csv(ruta_csv):
 
             hoja_detalle.column_dimensions[get_column_letter(col_idx)].width = max(15, int(max_length * 1.2) + 2)
 
+        # Ajustar ancho de columna A
+        hoja_detalle.column_dimensions[get_column_letter(1)].width = 3
+        # Ajustar ancho de columna B
+        hoja_detalle.column_dimensions[get_column_letter(2)].width = 3
+
         # ---------------------------
         # ✅ Crear tabla Referencia
         # ---------------------------
-        col_inicio_ref = 12  # Columna L
+        col_inicio_ref = 13  # Columna M
         hoja_detalle.merge_cells(start_row=1, start_column=col_inicio_ref, end_row=1, end_column=col_inicio_ref+1)
         celda_titulo_ref = hoja_detalle.cell(row=1, column=col_inicio_ref)
         celda_titulo_ref.value = "Referencia"
         celda_titulo_ref.alignment = center_alignment
-        celda_titulo_ref.font = Font(bold=True)
+        celda_titulo_ref.font = Font(bold=True, size=12)
         celda_titulo_ref.border = thin_border
 
         hoja_detalle.cell(row=2, column=col_inicio_ref, value="Puerto").alignment = center_alignment
@@ -172,10 +190,12 @@ def procesar_csv(ruta_csv):
             celda_pec = hoja_detalle.cell(row=i, column=col_inicio_ref, value=pec)
             celda_pec.alignment = center_alignment
             celda_pec.border = thin_border
+            celda_pec.font = Font(size=12)
 
             celda_tipo = hoja_detalle.cell(row=i, column=col_inicio_ref+1, value=card_type)
             celda_tipo.alignment = center_alignment
             celda_tipo.border = thin_border
+            celda_tipo.font = Font(size=12)
 
         # ✅ Ajustar ancho de columnas L y M automáticamente
         for col_idx in [col_inicio_ref, col_inicio_ref+1]:  # L y M
@@ -223,7 +243,7 @@ def seleccionar_archivo():
     if ruta:
         try:
             salida = procesar_csv(ruta)
-            messagebox.showinfo("Éxito", f"Archivo generado:\n{salida}")
+            messagebox.showinfo("Éxito", f"Archivo generado con éxito")
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo procesar:\n{str(e)}")
 
@@ -234,7 +254,7 @@ if use_dnd:
         ruta = event.data.strip("{}")  # Para rutas con espacios
         try:
             salida = procesar_csv(ruta)
-            messagebox.showinfo("Éxito", f"Archivo generado:\n{salida}")
+            messagebox.showinfo("Éxito", f"Archivo generado con éxito")
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo procesar:\n{str(e)}")
 
