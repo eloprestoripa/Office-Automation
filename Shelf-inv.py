@@ -29,7 +29,14 @@ def procesar_csv(ruta_csv):
     def ajustar_ancho_columnas(ws, dataframe, ancho_maximo=60, factor_ajuste=1.25):
         for i, col in enumerate(dataframe.columns, start=1):
             max_length = max((len(str(cell.value)) for cell in ws[get_column_letter(i)] if cell.value), default=0)
-            ws.column_dimensions[get_column_letter(i)].width = max(5, int(max_length * factor_ajuste) + 5)
+            if i == 4:  # Columna D
+                ws.column_dimensions[get_column_letter(i)].width = int(max_length)
+            elif i == 6:  # Columna F
+                ws.column_dimensions[get_column_letter(i)].width = 8
+            elif i == 7:  # Columna G
+                ws.column_dimensions[get_column_letter(i)].width = int(max_length * factor_ajuste) + 5
+            else:
+                ws.column_dimensions[get_column_letter(i)].width = int(max_length * factor_ajuste)
 
     # Leer y limpiar
     df = pd.read_csv(ruta_csv)
@@ -82,7 +89,7 @@ def procesar_csv(ruta_csv):
         # Números de puertos en fila 2 (C2 → K2)
         for col_idx in range(3, 12):  # C(2) a K(10)
             cell = hoja_detalle.cell(row=2, column=col_idx)
-            cell.value = f"{col_idx-1:02d}"  # 01, 02, ..., 09
+            cell.value = f"{col_idx-2:02d}"  # 01, 02, ..., 09
             cell.alignment = center_alignment
             cell.border = thin_border
             cell.font = Font(size=14)
